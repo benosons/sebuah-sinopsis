@@ -262,5 +262,182 @@
             </table>
         </div>
     </div>
+
+    <!-- Visitor Analytics Panel -->
+    <div class="mt-6">
+        <div class="flex items-center gap-2 mb-4">
+            <span class="material-symbols-outlined text-primary text-2xl">analytics</span>
+            <h3 class="text-xl font-bold text-gray-900 dark:text-white">Visitor Analytics</h3>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <!-- Visitors by Country -->
+            <div class="bg-surface-light dark:bg-surface-dark rounded-xl shadow-sm border border-gray-200 dark:border-gray-800 p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h4 class="text-lg font-bold text-gray-900 dark:text-white">Visitors by Country</h4>
+                    <span class="material-symbols-outlined text-gray-400">public</span>
+                </div>
+                @if(count($countryBreakdown) > 0)
+                    <div class="space-y-3">
+                        @php $maxCount = max(array_column($countryBreakdown, 'count')); @endphp
+                        @foreach($countryBreakdown as $country)
+                            <div class="flex items-center gap-3">
+                                <div class="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center text-xs font-bold text-primary">
+                                    {{ strtoupper(substr($country['country'], 0, 2)) }}
+                                </div>
+                                <div class="flex-1">
+                                    <div class="flex justify-between items-center mb-1">
+                                        <span class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ $country['country'] }}</span>
+                                        <span class="text-xs text-gray-500">{{ $country['count'] }}</span>
+                                    </div>
+                                    <div class="w-full bg-gray-100 dark:bg-gray-700 rounded-full h-1.5">
+                                        <div class="bg-primary h-1.5 rounded-full" style="width: {{ ($country['count'] / $maxCount) * 100 }}%"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+                @else
+                    <div class="text-center py-8 text-gray-400">
+                        <span class="material-symbols-outlined text-3xl mb-2">language</span>
+                        <p class="text-sm">No country data yet</p>
+                    </div>
+                @endif
+            </div>
+
+            <!-- Top Clicked Books -->
+            <div class="bg-surface-light dark:bg-surface-dark rounded-xl shadow-sm border border-gray-200 dark:border-gray-800 p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h4 class="text-lg font-bold text-gray-900 dark:text-white">Most Viewed Books</h4>
+                    <span class="material-symbols-outlined text-gray-400">local_fire_department</span>
+                </div>
+                @if(count($topClickedBooks) > 0)
+                    <div class="space-y-3">
+                        @foreach($topClickedBooks as $index => $book)
+                            <div class="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+                                <div class="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold 
+                                    {{ $index === 0 ? 'bg-yellow-100 text-yellow-700' : ($index === 1 ? 'bg-gray-100 text-gray-600' : ($index === 2 ? 'bg-orange-100 text-orange-700' : 'bg-gray-50 text-gray-500')) }}">
+                                    {{ $index + 1 }}
+                                </div>
+                                <div class="flex-1 min-w-0">
+                                    <p class="text-sm font-medium text-gray-900 dark:text-white truncate">{{ $book['title'] }}</p>
+                                    <p class="text-xs text-gray-500 truncate">{{ $book['author'] }}</p>
+                                </div>
+                                <div class="flex items-center gap-1 text-xs text-gray-500">
+                                    <span class="material-symbols-outlined text-sm">visibility</span>
+                                    <span>{{ number_format($book['views_count']) }}</span>
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+                @else
+                    <div class="text-center py-8 text-gray-400">
+                        <span class="material-symbols-outlined text-3xl mb-2">menu_book</span>
+                        <p class="text-sm">No view data yet</p>
+                    </div>
+                @endif
+            </div>
+
+            <!-- Device & Browser Stats -->
+            <div class="bg-surface-light dark:bg-surface-dark rounded-xl shadow-sm border border-gray-200 dark:border-gray-800 p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h4 class="text-lg font-bold text-gray-900 dark:text-white">Device & Browser</h4>
+                    <span class="material-symbols-outlined text-gray-400">devices</span>
+                </div>
+                
+                <!-- Device Breakdown -->
+                <div class="mb-6">
+                    <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Devices</p>
+                    @if(count($deviceBreakdown) > 0)
+                        <div class="flex gap-2 flex-wrap">
+                            @foreach($deviceBreakdown as $device => $count)
+                                <div class="flex items-center gap-2 px-3 py-1.5 bg-gray-50 dark:bg-gray-800 rounded-full">
+                                    <span class="material-symbols-outlined text-sm text-gray-500">
+                                        {{ $device === 'desktop' ? 'computer' : ($device === 'mobile' ? 'smartphone' : 'tablet') }}
+                                    </span>
+                                    <span class="text-xs font-medium text-gray-700 dark:text-gray-300 capitalize">{{ $device }}</span>
+                                    <span class="text-xs text-primary font-bold">{{ $count }}</span>
+                                </div>
+                            @endforeach
+                        </div>
+                    @else
+                        <p class="text-xs text-gray-400">No device data</p>
+                    @endif
+                </div>
+
+                <!-- Browser Breakdown -->
+                <div>
+                    <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Browsers</p>
+                    @if(count($browserBreakdown) > 0)
+                        <div class="space-y-2">
+                            @foreach($browserBreakdown as $browser => $count)
+                                <div class="flex items-center justify-between">
+                                    <span class="text-sm text-gray-700 dark:text-gray-300">{{ $browser }}</span>
+                                    <span class="text-xs font-bold text-primary">{{ $count }}</span>
+                                </div>
+                            @endforeach
+                        </div>
+                    @else
+                        <p class="text-xs text-gray-400">No browser data</p>
+                    @endif
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Visitors Table -->
+        <div class="bg-surface-light dark:bg-surface-dark rounded-xl shadow-sm border border-gray-200 dark:border-gray-800 p-6 mt-6">
+            <div class="flex items-center justify-between mb-4">
+                <h4 class="text-lg font-bold text-gray-900 dark:text-white">Recent Visitors</h4>
+                <span class="text-xs text-gray-500">Last 8 visitors</span>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left">
+                    <thead>
+                        <tr class="border-b border-gray-100 dark:border-gray-700">
+                            <th class="py-2 px-3 text-xs font-semibold uppercase tracking-wide text-gray-500">IP</th>
+                            <th class="py-2 px-3 text-xs font-semibold uppercase tracking-wide text-gray-500">Country</th>
+                            <th class="py-2 px-3 text-xs font-semibold uppercase tracking-wide text-gray-500 hidden sm:table-cell">Device</th>
+                            <th class="py-2 px-3 text-xs font-semibold uppercase tracking-wide text-gray-500 hidden md:table-cell">Browser</th>
+                            <th class="py-2 px-3 text-xs font-semibold uppercase tracking-wide text-gray-500 hidden lg:table-cell">OS</th>
+                            <th class="py-2 px-3 text-xs font-semibold uppercase tracking-wide text-gray-500 text-right">Time</th>
+                        </tr>
+                    </thead>
+                    <tbody class="text-sm divide-y divide-gray-50 dark:divide-gray-800">
+                        @forelse($recentVisitors as $visitor)
+                            <tr class="hover:bg-gray-50 dark:hover:bg-gray-800/50">
+                                <td class="py-2 px-3 font-mono text-xs text-gray-600 dark:text-gray-400">{{ $visitor['ip'] }}</td>
+                                <td class="py-2 px-3">
+                                    <span class="inline-flex items-center gap-1">
+                                        <span class="w-5 h-5 rounded bg-primary/10 flex items-center justify-center text-[10px] font-bold text-primary">
+                                            {{ strtoupper(substr($visitor['country'] ?? 'UN', 0, 2)) }}
+                                        </span>
+                                        <span class="text-gray-700 dark:text-gray-300">{{ $visitor['country'] ?? 'Unknown' }}</span>
+                                    </span>
+                                </td>
+                                <td class="py-2 px-3 hidden sm:table-cell">
+                                    <span class="inline-flex items-center gap-1 text-gray-600 dark:text-gray-400">
+                                        <span class="material-symbols-outlined text-sm">
+                                            {{ $visitor['device'] === 'desktop' ? 'computer' : ($visitor['device'] === 'mobile' ? 'smartphone' : 'tablet') }}
+                                        </span>
+                                        <span class="capitalize">{{ $visitor['device'] }}</span>
+                                    </span>
+                                </td>
+                                <td class="py-2 px-3 text-gray-600 dark:text-gray-400 hidden md:table-cell">{{ $visitor['browser'] }}</td>
+                                <td class="py-2 px-3 text-gray-600 dark:text-gray-400 hidden lg:table-cell">{{ $visitor['os'] }}</td>
+                                <td class="py-2 px-3 text-right text-gray-500 text-xs">{{ $visitor['time'] }}</td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="6" class="py-8 text-center text-gray-400">
+                                    <span class="material-symbols-outlined text-3xl mb-2">person_off</span>
+                                    <p class="text-sm">No visitors yet</p>
+                                </td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
 </div>
 @endsection

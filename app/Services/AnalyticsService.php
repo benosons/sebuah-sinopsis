@@ -6,6 +6,8 @@ use App\Models\Book;
 use App\Models\PageView;
 use App\Models\Visitor;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 
 class AnalyticsService
@@ -23,13 +25,16 @@ class AnalyticsService
         if (!$visitor) {
             $userAgent = $request->userAgent();
             $parsed = $this->parseUserAgent($userAgent);
+            $ip = $request->ip();
+            $country = $this->getCountryFromIp($ip);
 
             $visitor = Visitor::create([
-                'ip_address' => $request->ip(),
+                'ip_address' => $ip,
                 'user_agent' => $userAgent,
                 'device' => $parsed['device'],
                 'browser' => $parsed['browser'],
                 'os' => $parsed['os'],
+                'country' => $country,
                 'referrer' => $request->header('referer'),
                 'session_id' => $sessionId,
                 'user_id' => auth()->id(),
@@ -45,6 +50,30 @@ class AnalyticsService
         }
 
         return $visitor;
+    }
+
+    /**
+     * Get country from IP address using free API
+     */
+    protected function getCountryFromIp(string $ip): ?string
+    {
+        // Skip for local IPs
+        if (in_array($ip, ['127.0.0.1', '::1', 'localhost']) || str_starts_with($ip, '192.168.') || str_starts_with($ip, '10.')) {
+            return 'Local';
+        }
+
+        // Cache country lookup for 24 hours
+        return Cache::remember("ip_country_{$ip}", 86400, function () use ($ip) {
+            try {
+                $response = Http::timeout(3)->get("http://ip-api.com/json/{$ip}?fields=country");
+                if ($response->successful() && $response->json('country')) {
+                    return $response->json('country');
+                }
+            } catch (\Exception $e) {
+                // Silently fail
+            }
+            return 'Unknown';
+        });
     }
 
     /**
@@ -146,6 +175,7 @@ class AnalyticsService
     public function getDeviceBreakdown(): array
     {
         return Visitor::selectRaw('device, COUNT(*) as count')
+            ->whereNotNull('device')
             ->groupBy('device')
             ->pluck('count', 'device')
             ->toArray();
@@ -157,11 +187,77 @@ class AnalyticsService
     public function getBrowserBreakdown(): array
     {
         return Visitor::selectRaw('browser, COUNT(*) as count')
+            ->whereNotNull('browser')
             ->groupBy('browser')
             ->orderByDesc('count')
             ->limit(5)
             ->pluck('count', 'browser')
             ->toArray();
+    }
+
+    /**
+     * Get country breakdown for map
+     */
+    public function getCountryBreakdown(): array
+    {
+        return Visitor::selectRaw('country, COUNT(*) as count')
+            ->whereNotNull('country')
+            ->where('country', '!=', 'Unknown')
+            ->groupBy('country')
+            ->orderByDesc('count')
+            ->limit(10)
+            ->get()
+            ->map(fn($item) => [
+                'country' => $item->country,
+                'count' => $item->count,
+            ])
+            ->toArray();
+    }
+
+    /**
+     * Get top clicked/viewed books
+     */
+    public function getTopClickedBooks(int $limit = 5): array
+    {
+        return Book::select('id', 'title', 'author', 'cover_image', 'views_count')
+            ->where('is_published', true)
+            ->orderByDesc('views_count')
+            ->limit($limit)
+            ->get()
+            ->toArray();
+    }
+
+    /**
+     * Get recent visitors with details
+     */
+    public function getRecentVisitors(int $limit = 10): array
+    {
+        return Visitor::select('id', 'ip_address', 'device', 'browser', 'os', 'country', 'created_at')
+            ->latest()
+            ->limit($limit)
+            ->get()
+            ->map(fn($v) => [
+                'id' => $v->id,
+                'ip' => $this->maskIp($v->ip_address),
+                'device' => $v->device,
+                'browser' => $v->browser,
+                'os' => $v->os,
+                'country' => $v->country,
+                'time' => $v->created_at->diffForHumans(),
+            ])
+            ->toArray();
+    }
+
+    /**
+     * Mask IP address for privacy
+     */
+    protected function maskIp(string $ip): string
+    {
+        $parts = explode('.', $ip);
+        if (count($parts) === 4) {
+            return $parts[0] . '.' . $parts[1] . '.xxx.xxx';
+        }
+        return $ip;
     }
 
     /**

@@ -4,7 +4,7 @@
     <meta charset="utf-8"/>
     <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>@yield('title', 'Admin Dashboard') - Sebuah Sinopsis</title>
+    <title>@yield('title', 'Admin Dashboard') - {{ \App\Models\Setting::get('site_name', 'Sebuah Sinopsis') }}</title>
     <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;900&display=swap" rel="stylesheet"/>
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
@@ -45,8 +45,14 @@
             <div class="flex flex-col h-full p-4">
                 <!-- Brand -->
                 <div class="flex flex-col mb-8 px-2">
-                    <a href="{{ route('books.index') }}" class="text-gray-900 dark:text-white text-lg font-bold leading-normal hover:text-primary transition-colors">
-                        Sebuah Sinopsis
+                    <a href="{{ route('books.index') }}" class="flex items-center gap-2 text-gray-900 dark:text-white hover:text-primary transition-colors">
+                        @php $siteLogo = \App\Models\Setting::get('site_logo'); @endphp
+                        @if($siteLogo)
+                            <img src="{{ asset('storage/' . $siteLogo) }}" alt="Logo" class="w-8 h-8 object-contain">
+                        @else
+                            <span class="material-symbols-outlined text-primary text-2xl">auto_stories</span>
+                        @endif
+                        <span class="text-lg font-bold leading-normal">{{ \App\Models\Setting::get('site_name', 'Sebuah Sinopsis') }}</span>
                     </a>
                     <p class="text-gray-500 dark:text-gray-400 text-xs font-normal leading-normal">Admin Dashboard</p>
                 </div>
@@ -89,6 +95,10 @@
                             <span class="material-symbols-outlined {{ request()->routeIs('permissions.*') ? 'icon-filled' : '' }} text-xl">key</span>
                             <span class="text-sm {{ request()->routeIs('permissions.*') ? 'font-bold' : 'font-medium' }}">Permissions</span>
                         </a>
+                        <a class="flex items-center gap-3 px-3 py-2.5 rounded-lg {{ request()->routeIs('admin.settings.*') ? 'bg-primary/10 text-primary dark:text-blue-400' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800' }} transition-colors" href="{{ route('admin.settings.index') }}">
+                            <span class="material-symbols-outlined {{ request()->routeIs('admin.settings.*') ? 'icon-filled' : '' }} text-xl">tune</span>
+                            <span class="text-sm {{ request()->routeIs('admin.settings.*') ? 'font-bold' : 'font-medium' }}">Site Settings</span>
+                        </a>
                     </div>
                 </nav>
                 
@@ -123,26 +133,6 @@
                 </div>
                 <div class="flex items-center gap-3">
                     @yield('header-actions')
-                    
-                    <!-- Maintenance Mode Toggle -->
-                    <div class="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
-                        <span class="text-xs font-medium text-gray-500 dark:text-gray-400" id="maintenance-label">
-                            {{ \App\Models\Setting::isMaintenanceMode() ? 'Maintenance' : 'Site Live' }}
-                        </span>
-                        <button 
-                            type="button" 
-                            id="maintenance-toggle"
-                            onclick="toggleMaintenanceMode()"
-                            class="relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 {{ \App\Models\Setting::isMaintenanceMode() ? 'bg-orange-500' : 'bg-green-500' }}"
-                            role="switch"
-                            aria-checked="{{ \App\Models\Setting::isMaintenanceMode() ? 'true' : 'false' }}"
-                        >
-                            <span 
-                                id="maintenance-toggle-dot"
-                                class="pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out {{ \App\Models\Setting::isMaintenanceMode() ? 'translate-x-4' : 'translate-x-0' }}"
-                            ></span>
-                        </button>
-                    </div>
                     
                     <!-- User Info -->
                     <div class="hidden md:flex items-center gap-2 pl-4 border-l border-gray-200 dark:border-gray-700">
@@ -197,38 +187,6 @@
             overlay.classList.toggle('hidden');
         }
 
-        function toggleMaintenanceMode() {
-            const toggle = document.getElementById('maintenance-toggle');
-            const dot = document.getElementById('maintenance-toggle-dot');
-            const label = document.getElementById('maintenance-label');
-            
-            fetch('{{ route("admin.toggle-maintenance") }}', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
-                }
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    if (data.maintenance_mode) {
-                        toggle.classList.remove('bg-green-500');
-                        toggle.classList.add('bg-orange-500');
-                        dot.classList.remove('translate-x-0');
-                        dot.classList.add('translate-x-4');
-                        label.textContent = 'Maintenance';
-                    } else {
-                        toggle.classList.remove('bg-orange-500');
-                        toggle.classList.add('bg-green-500');
-                        dot.classList.remove('translate-x-4');
-                        dot.classList.add('translate-x-0');
-                        label.textContent = 'Site Live';
-                    }
-                }
-            })
-            .catch(error => console.error('Error:', error));
-        }
     </script>
     @stack('scripts')
 </body>

@@ -37,6 +37,10 @@ Route::group(['middleware' => ['auth', 'role:Super-Admin']], function () {
 Route::group(['middleware' => ['auth', 'role:Super-Admin'], 'prefix' => 'admin', 'as' => 'admin.'], function () {
     Route::resource('books', App\Http\Controllers\Admin\BookController::class);
     Route::resource('categories', App\Http\Controllers\Admin\CategoryController::class)->except(['show']);
+    
+    // Site Settings
+    Route::get('/settings', [App\Http\Controllers\Admin\SettingController::class, 'index'])->name('settings.index');
+    Route::put('/settings', [App\Http\Controllers\Admin\SettingController::class, 'update'])->name('settings.update');
 });
 
 // Public Routes (with maintenance mode check and visitor tracking)

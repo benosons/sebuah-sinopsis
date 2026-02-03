@@ -45,6 +45,13 @@ class DashboardController extends Controller
         // Chart data for traffic performance
         $chartData = $this->analytics->getDailyViewsChart(7);
         
+        // Visitor analytics for panel
+        $countryBreakdown = $this->analytics->getCountryBreakdown();
+        $deviceBreakdown = $this->analytics->getDeviceBreakdown();
+        $browserBreakdown = $this->analytics->getBrowserBreakdown();
+        $topClickedBooks = $this->analytics->getTopClickedBooks(5);
+        $recentVisitors = $this->analytics->getRecentVisitors(8);
+        
         // Recent activities (combine books, comments, users)
         $recentActivities = collect();
         
@@ -106,6 +113,11 @@ class DashboardController extends Controller
             'pageViewsThisMonth',
             'pageViewsToday',
             'chartData',
+            'countryBreakdown',
+            'deviceBreakdown',
+            'browserBreakdown',
+            'topClickedBooks',
+            'recentVisitors',
             'recentActivities',
             'topBooks'
         ));
