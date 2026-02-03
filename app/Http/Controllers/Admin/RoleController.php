@@ -17,7 +17,7 @@ class RoleController extends Controller
      */
     public function index()
     {
-        $roles = Role::paginate(10);
+        $roles = Role::with(['permissions', 'users'])->paginate(10);
         return view('admin.roles.index', compact('roles'));
     }
 
@@ -28,7 +28,7 @@ class RoleController extends Controller
      */
     public function create()
     {
-        $permissions = Permission::pluck('name', 'name')->all();
+        $permissions = Permission::all();
         return view('admin.roles.create', compact('permissions'));
     }
 
@@ -42,12 +42,16 @@ class RoleController extends Controller
     {
         $request->validate([
             'name' => 'required|unique:roles,name',
-            'permissions' => 'required|array',
-            'permissions.*' => 'exists:permissions,name',
+            'permissions' => 'nullable|array',
+            'permissions.*' => 'exists:permissions,id',
         ]);
 
         $role = Role::create(['name' => $request->name]);
-        $role->syncPermissions($request->permissions);
+        
+        if ($request->has('permissions')) {
+            $permissions = Permission::whereIn('id', $request->permissions)->get();
+            $role->syncPermissions($permissions);
+        }
 
         return redirect()->route('roles.index')
             ->with('success', 'Role created successfully.');
@@ -61,6 +65,7 @@ class RoleController extends Controller
      */
     public function show(Role $role)
     {
+        $role->load(['permissions', 'users']);
         return view('admin.roles.show', compact('role'));
     }
 
@@ -72,8 +77,8 @@ class RoleController extends Controller
      */
     public function edit(Role $role)
     {
-        $permissions = Permission::pluck('name', 'name')->all();
-        $rolePermissions = $role->permissions->pluck('name', 'name')->all();
+        $permissions = Permission::all();
+        $rolePermissions = $role->permissions->pluck('id')->toArray();
 
         return view('admin.roles.edit', compact('role', 'permissions', 'rolePermissions'));
     }
@@ -89,12 +94,18 @@ class RoleController extends Controller
     {
         $request->validate([
             'name' => ['required', Rule::unique('roles')->ignore($role->id)],
-            'permissions' => 'required|array',
-            'permissions.*' => 'exists:permissions,name',
+            'permissions' => 'nullable|array',
+            'permissions.*' => 'exists:permissions,id',
         ]);
 
         $role->update(['name' => $request->name]);
-        $role->syncPermissions($request->permissions);
+        
+        if ($request->has('permissions')) {
+            $permissions = Permission::whereIn('id', $request->permissions)->get();
+            $role->syncPermissions($permissions);
+        } else {
+            $role->syncPermissions([]);
+        }
 
         return redirect()->route('roles.index')
             ->with('success', 'Role updated successfully.');

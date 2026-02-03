@@ -22,6 +22,9 @@
                         <x-nav-link :href="route('roles.index')" :active="request()->routeIs('roles.index')">
                             {{ __('Roles') }}
                         </x-nav-link>
+                        <x-nav-link :href="route('admin.books.index')" :active="request()->routeIs('admin.books.*')">
+                            {{ __('Kelola Buku') }}
+                        </x-nav-link>
                     @endrole
                 </div>
             </div>
